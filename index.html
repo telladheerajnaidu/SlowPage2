@@ -17,9 +17,6 @@
             font-size: 24px;
             color: gray;
         }
-        img {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -43,19 +40,13 @@
         // Function to simulate a failed request with "Code 12017"
         function failedRequest(url) {
             return new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    reject({ code: 12017, message: "The operation was canceled." });
-                }, 60000); // Simulate 60 seconds of connect time
+                console.log(`Connecting to ${url}... (60 seconds connect time)`);
 
-                // Simulate opening the connection
-                console.log(`Connecting to ${url}...`);
-
-                // Simulate closing the connection before completion
+                // Simulate 60-second connect time before rejecting
                 setTimeout(() => {
-                    clearTimeout(timeout);
                     console.log(`Request to ${url} failed: Code 12017`);
                     reject({ code: 12017, message: "The operation was canceled." });
-                }, 60000);
+                }, 60000); // Simulate 60 seconds connect time
             });
         }
 
@@ -73,25 +64,25 @@
             "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request3"
         ];
 
-        // Perform normal requests repeatedly for the first 60 seconds
+        // Perform normal requests repeatedly for the first 20 seconds
         let normalInterval = setInterval(() => {
             normalRequestUrls.forEach(url => normalRequest(url));
         }, 1500); // Repeat every 1.5 seconds
 
-        // Stop normal requests after 60 seconds and start failed requests
+        // Stop normal requests after 20 seconds
         setTimeout(() => {
             clearInterval(normalInterval);
-            console.log("Switching to simulate failed requests.");
+            console.log("Stopped normal requests after 20 seconds.");
 
-            // Trigger 3 failed requests
+            // Start simulating failed requests
             failedRequestUrls.forEach(url => {
                 failedRequest(url).catch(err => {
                     console.error(`Error for ${url}:`, err.message, `Code: ${err.code}`);
                 });
             });
-        }, 60000); // Start failed requests after 60 seconds
+        }, 20000); // 20 seconds
 
-        // Show content and hide loading after 150 seconds
+        // Show content and hide loading after all requests are simulated (150 seconds)
         setTimeout(() => {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
