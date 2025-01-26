@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulated Slow Loading Page</title>
+    <title>Simulate Long Connect Time Requests</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -20,82 +20,69 @@
     </style>
 </head>
 <body>
-    <div id="loading">Page is loading... Please wait (150 seconds).</div>
+    <div id="loading">Page is loading... Simulating requests with long connect times.</div>
     <div id="content">
-        <h1>Welcome to the Slow Loading Page!</h1>
-        <p>Normal requests completed. Now simulating failed requests.</p>
+        <h1>Simulation Complete</h1>
+        <p>All requests (including delayed ones) have been completed.</p>
     </div>
 
     <script>
-        // Function to simulate making normal requests
+        // Function to simulate normal requests
         function makeNormalRequest(url) {
             return fetch(url)
                 .then(response => response.text())
-                .then(text => {
+                .then(() => {
                     console.log(`Normal request to ${url} completed.`);
-                    return text;
                 })
-                .catch(err => console.log(`Normal request to ${url} failed:`, err));
+                .catch(err => console.error(`Normal request to ${url} failed:`, err));
         }
 
-        // Function to simulate a failed request
-        function makeFailedRequest(url) {
-            console.log(`Simulating failed request to ${url} with 60 seconds connect time.`);
+        // Function to simulate delayed requests (with 60+ seconds connect time)
+        function makeDelayedRequest(url) {
+            console.log(`Simulating delayed request to ${url}.`);
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
-                    console.error(`Request to ${url} failed: Code 12017`);
-                    reject({ code: 12017, message: "The operation was canceled." });
-                }, 60000); // Simulate 60 seconds connect time
+                    console.error(`Delayed request to ${url} failed (timed out after 60+ seconds).`);
+                    reject({ code: 12017, message: "The operation was canceled due to timeout." });
+                }, 65000); // Simulate 65 seconds connect time
             });
         }
 
-        // API endpoints to send requests to
-        const normalUrls = [
+        // List of URLs to request
+        const requestUrls = [
             "https://jsonplaceholder.typicode.com/posts",
-            "https://jsonplaceholder.typicode.com/users"
-        ];
-        const failedUrls = [
+            "https://jsonplaceholder.typicode.com/users",
             "https://example.com/fake1",
-            "https://example.com/fake2",
-            "https://example.com/fake3"
+            "https://example.com/fake2"
         ];
 
-        // Array to keep track of all requests
+        // Array to store all promises
         let requests = [];
 
-        // Send normal requests every 1.5 seconds for the first 20 seconds
-        let normalRequestInterval = setInterval(() => {
-            normalUrls.forEach(url => {
-                requests.push(makeNormalRequest(url));
+        // Send requests every 1.5 seconds
+        let interval = setInterval(() => {
+            requestUrls.forEach((url, index) => {
+                // Randomly decide if a request will be normal or delayed
+                if (Math.random() > 0.7) {
+                    // Simulate a delayed request
+                    requests.push(makeDelayedRequest(url).catch(err => console.log(err.message)));
+                } else {
+                    // Simulate a normal request
+                    requests.push(makeNormalRequest(url));
+                }
             });
         }, 1500); // Every 1.5 seconds
 
-        // After 20 seconds, switch to failed requests
+        // Stop sending requests after 150 seconds
         setTimeout(() => {
-            clearInterval(normalRequestInterval); // Stop normal requests
-            console.log("Switching to failed requests...");
-
-            // Start sending failed requests every 1.5 seconds
-            setInterval(() => {
-                failedUrls.forEach(url => {
-                    requests.push(
-                        makeFailedRequest(url).catch(err => {
-                            console.log(`Handled error: ${err.message}`);
-                        })
-                    );
-                });
-            }, 1500); // Every 1.5 seconds
-        }, 20000); // After 20 seconds
-
-        // Stop the test after 150 seconds and show the content
-        setTimeout(() => {
+            clearInterval(interval); // Stop sending new requests
+            console.log("Stopping request generation. Waiting for all requests to complete...");
             Promise.allSettled(requests).then(() => {
                 console.log("All requests completed or timed out.");
                 document.getElementById("loading").style.display = "none";
                 document.getElementById("content").style.display = "block";
             });
         }, 150000); // 150 seconds
-
     </script>
 </body>
 </html>
