@@ -20,18 +20,22 @@
     </style>
 </head>
 <body>
-    <div id="loading">Page is loading... Please wait.</div>
+    <div id="loading">Page is loading... Please wait (150 seconds).</div>
     <div id="content">
-        <h1>Welcome to the Simulated Slow Loading Page!</h1>
+        <h1>Welcome to the Slow Loading Page!</h1>
         <p>Normal requests completed. Now simulating failed requests.</p>
     </div>
 
     <script>
-        // Function to make a normal request
+        // Function to simulate making normal requests
         function makeNormalRequest(url) {
-            fetch(url)
-                .then(response => console.log(`Normal request to ${url} completed.`))
-                .catch(err => console.error(`Normal request to ${url} failed:`, err));
+            return fetch(url)
+                .then(response => response.text())
+                .then(text => {
+                    console.log(`Normal request to ${url} completed.`);
+                    return text;
+                })
+                .catch(err => console.log(`Normal request to ${url} failed:`, err));
         }
 
         // Function to simulate a failed request
@@ -45,23 +49,28 @@
             });
         }
 
-        // Array of request URLs
+        // API endpoints to send requests to
         const normalUrls = [
-            "https://jsonplaceholder.typicode.com/posts/1",
-            "https://jsonplaceholder.typicode.com/posts/2"
+            "https://jsonplaceholder.typicode.com/posts",
+            "https://jsonplaceholder.typicode.com/users"
         ];
         const failedUrls = [
-            "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request1",
-            "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request2",
-            "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request3"
+            "https://example.com/fake1",
+            "https://example.com/fake2",
+            "https://example.com/fake3"
         ];
 
-        // Start sending normal requests every 1.5 seconds
+        // Array to keep track of all requests
+        let requests = [];
+
+        // Send normal requests every 1.5 seconds for the first 20 seconds
         let normalRequestInterval = setInterval(() => {
-            normalUrls.forEach(url => makeNormalRequest(url));
+            normalUrls.forEach(url => {
+                requests.push(makeNormalRequest(url));
+            });
         }, 1500); // Every 1.5 seconds
 
-        // After 20 seconds, stop normal requests and start failed requests
+        // After 20 seconds, switch to failed requests
         setTimeout(() => {
             clearInterval(normalRequestInterval); // Stop normal requests
             console.log("Switching to failed requests...");
@@ -69,18 +78,24 @@
             // Start sending failed requests every 1.5 seconds
             setInterval(() => {
                 failedUrls.forEach(url => {
-                    makeFailedRequest(url).catch(err => {
-                        console.log(`Handled error: ${err.message}`);
-                    });
+                    requests.push(
+                        makeFailedRequest(url).catch(err => {
+                            console.log(`Handled error: ${err.message}`);
+                        })
+                    );
                 });
             }, 1500); // Every 1.5 seconds
         }, 20000); // After 20 seconds
 
-        // Show content after all requests simulated
+        // Stop the test after 150 seconds and show the content
         setTimeout(() => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('content').style.display = 'block';
+            Promise.allSettled(requests).then(() => {
+                console.log("All requests completed or timed out.");
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("content").style.display = "block";
+            });
         }, 150000); // 150 seconds
+
     </script>
 </body>
 </html>
