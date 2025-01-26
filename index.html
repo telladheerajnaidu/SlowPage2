@@ -27,62 +27,56 @@
     </div>
 
     <script>
-        // Function to simulate a normal request
-        function normalRequest(url) {
-            return fetch(url)
-                .then(response => {
-                    console.log(`Normal request to ${url} completed.`);
-                    return response.text();
-                })
+        // Function to make a normal request
+        function makeNormalRequest(url) {
+            fetch(url)
+                .then(response => console.log(`Normal request to ${url} completed.`))
                 .catch(err => console.error(`Normal request to ${url} failed:`, err));
         }
 
-        // Function to simulate a failed request with "Code 12017"
-        function failedRequest(url) {
+        // Function to simulate a failed request
+        function makeFailedRequest(url) {
+            console.log(`Simulating failed request to ${url} with 60 seconds connect time.`);
             return new Promise((resolve, reject) => {
-                console.log(`Connecting to ${url}... (60 seconds connect time)`);
-
-                // Simulate 60-second connect time before rejecting
                 setTimeout(() => {
-                    console.log(`Request to ${url} failed: Code 12017`);
+                    console.error(`Request to ${url} failed: Code 12017`);
                     reject({ code: 12017, message: "The operation was canceled." });
                 }, 60000); // Simulate 60 seconds connect time
             });
         }
 
-        // List of normal request URLs
-        const normalRequestUrls = [
+        // Array of request URLs
+        const normalUrls = [
             "https://jsonplaceholder.typicode.com/posts/1",
-            "https://jsonplaceholder.typicode.com/posts/2",
-            "https://jsonplaceholder.typicode.com/posts/3"
+            "https://jsonplaceholder.typicode.com/posts/2"
         ];
-
-        // List of failed request URLs
-        const failedRequestUrls = [
+        const failedUrls = [
             "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request1",
             "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request2",
             "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request3"
         ];
 
-        // Perform normal requests repeatedly for the first 20 seconds
-        let normalInterval = setInterval(() => {
-            normalRequestUrls.forEach(url => normalRequest(url));
-        }, 1500); // Repeat every 1.5 seconds
+        // Start sending normal requests every 1.5 seconds
+        let normalRequestInterval = setInterval(() => {
+            normalUrls.forEach(url => makeNormalRequest(url));
+        }, 1500); // Every 1.5 seconds
 
-        // Stop normal requests after 20 seconds
+        // After 20 seconds, stop normal requests and start failed requests
         setTimeout(() => {
-            clearInterval(normalInterval);
-            console.log("Stopped normal requests after 20 seconds.");
+            clearInterval(normalRequestInterval); // Stop normal requests
+            console.log("Switching to failed requests...");
 
-            // Start simulating failed requests
-            failedRequestUrls.forEach(url => {
-                failedRequest(url).catch(err => {
-                    console.error(`Error for ${url}:`, err.message, `Code: ${err.code}`);
+            // Start sending failed requests every 1.5 seconds
+            setInterval(() => {
+                failedUrls.forEach(url => {
+                    makeFailedRequest(url).catch(err => {
+                        console.log(`Handled error: ${err.message}`);
+                    });
                 });
-            });
-        }, 20000); // 20 seconds
+            }, 1500); // Every 1.5 seconds
+        }, 20000); // After 20 seconds
 
-        // Show content and hide loading after all requests are simulated (150 seconds)
+        // Show content after all requests simulated
         setTimeout(() => {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
