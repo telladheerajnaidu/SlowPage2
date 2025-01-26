@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulated Slow Loading Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        #content {
+            display: none;
+        }
+        #loading {
+            font-size: 24px;
+            color: gray;
+        }
+        img {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Page is loading... Please wait.</div>
+    <div id="content">
+        <h1>Welcome to the Simulated Slow Loading Page!</h1>
+        <p>Normal requests completed. Now simulating failed requests.</p>
+    </div>
+
+    <script>
+        // Function to simulate a normal request
+        function normalRequest(url) {
+            return fetch(url)
+                .then(response => {
+                    console.log(`Normal request to ${url} completed.`);
+                    return response.text();
+                })
+                .catch(err => console.error(`Normal request to ${url} failed:`, err));
+        }
+
+        // Function to simulate a failed request with "Code 12017"
+        function failedRequest(url) {
+            return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject({ code: 12017, message: "The operation was canceled." });
+                }, 60000); // Simulate 60 seconds of connect time
+
+                // Simulate opening the connection
+                console.log(`Connecting to ${url}...`);
+
+                // Simulate closing the connection before completion
+                setTimeout(() => {
+                    clearTimeout(timeout);
+                    console.log(`Request to ${url} failed: Code 12017`);
+                    reject({ code: 12017, message: "The operation was canceled." });
+                }, 60000);
+            });
+        }
+
+        // List of normal request URLs
+        const normalRequestUrls = [
+            "https://jsonplaceholder.typicode.com/posts/1",
+            "https://jsonplaceholder.typicode.com/posts/2",
+            "https://jsonplaceholder.typicode.com/posts/3"
+        ];
+
+        // List of failed request URLs
+        const failedRequestUrls = [
+            "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request1",
+            "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request2",
+            "https://wabi-us-east2-b-primary-redirect.analysis.windows.net/request3"
+        ];
+
+        // Perform normal requests repeatedly for the first 60 seconds
+        let normalInterval = setInterval(() => {
+            normalRequestUrls.forEach(url => normalRequest(url));
+        }, 1500); // Repeat every 1.5 seconds
+
+        // Stop normal requests after 60 seconds and start failed requests
+        setTimeout(() => {
+            clearInterval(normalInterval);
+            console.log("Switching to simulate failed requests.");
+
+            // Trigger 3 failed requests
+            failedRequestUrls.forEach(url => {
+                failedRequest(url).catch(err => {
+                    console.error(`Error for ${url}:`, err.message, `Code: ${err.code}`);
+                });
+            });
+        }, 60000); // Start failed requests after 60 seconds
+
+        // Show content and hide loading after 150 seconds
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        }, 150000); // 150 seconds
+    </script>
+</body>
+</html>
